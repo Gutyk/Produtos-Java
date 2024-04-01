@@ -1,48 +1,58 @@
 package br.com.fiap.produtomvc.models;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-
-import java.util.Objects;
+import lombok.*;
 
 // -- código omitido
+
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+@EqualsAndHashCode(exclude = {"nome", "descricao", "valor", "categoria"})
+
 @Entity
 @Table(name = "tb_produto")
 public class Produto {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "produto_seq")
+    @SequenceGenerator(name = "produto_seq", sequenceName = "produto_seq", allocationSize = 1)
     private Long id;
 
     @NotBlank(message = "Campo requerido")
     @Size(min = 3, message = "O nome deve ter no mínimo 3 carateres")
+    @Column(length = 150, nullable = false)
     private String nome;
 
     @NotBlank(message = "Campo requerido")
-    @Column(columnDefinition = "TEXT") //para textos longos
+//    @Column(columnDefinition = "TEXT") //para textos longos
+    @Column(length = 250, nullable = false)
     private String descricao;
 
     @NotNull(message = "Campo requerido")
     @Positive(message = "O valor deve ser positivo")
     private Double valor;
-    // -- código omitido
 
-    public Produto() {
+    //Relacionamento
+    @ManyToOne
+    @JoinColumn(name = "categoria_id", nullable = false) //PK
+    private Categoria categoria;
+
+/*    public Produto() {
     }
 
-    public Produto(Long id, String nome, String descricao, Double valor) {
+    public Produto(Long id, String nome, String descricao,
+                   Double valor, Categoria categoria) {
         this.id = id;
         this.nome = nome;
         this.descricao = descricao;
         this.valor = valor;
+        this.categoria = categoria;
     }
 
     public Long getId() {
@@ -77,6 +87,14 @@ public class Produto {
         this.valor = valor;
     }
 
+    public Categoria getCategoria() {
+        return categoria;
+    }
+
+    public void setCategoria(Categoria categoria) {
+        this.categoria = categoria;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -98,5 +116,5 @@ public class Produto {
                 ", descricao='" + descricao + '\'' +
                 ", valor=" + valor +
                 '}';
-    }
+    }*/
 }

@@ -1,48 +1,48 @@
 package br.com.fiap.produtomvc.controllers;
 
+import br.com.fiap.produtomvc.models.Categoria;
 import br.com.fiap.produtomvc.models.Produto;
+import br.com.fiap.produtomvc.repository.CategoriaRepository;
 import br.com.fiap.produtomvc.repository.ProdutoRepository;
-import org.springframework.transaction.annotation.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-//URL - localhost:8080/produtos
-//código omitido
+import java.util.List;
+
 @Controller
 @RequestMapping("/produtos")
 public class ProdutoController {
 
-    //injeção de pedendência
     @Autowired
     private ProdutoRepository repository;
 
-    //URL - localhost:8080/produtos/novo
-    @GetMapping("/novo")
-    public String adicionarProduto(Model model) {
+    @Autowired
+    private CategoriaRepository categoriaRepository;
 
+    // adicionando atributo categorias do model
+    // para popular ComboBox da View
+    @ModelAttribute("categorias")
+    public List<Categoria> categorias(){
+       return categoriaRepository.findAll();
+    }
+
+    //URL - localhost:8080/produtos/form
+    @GetMapping("/form")
+    public String loadForm(Model model) {
         model.addAttribute("produto", new Produto());
-        //model -> enviar o obj. Produto para a view
         return "produto/novo-produto";
-    } //código omitido
+    }
 
-    // código omitido
-    // receber dados do form da View novo-produto.html
-    //URL - localhost:8080/produtos/salvar
-
-    // @Valid - especificação Bean Validation - dispara o processo de validação
-    // class BindingResult - Para verificar se o formulário teve erro ou não
-    // RedirectAttributes - Redireciona objeto
-    @PostMapping("/salvar")
+    // HTTP - POST -  http:localhost:8080/produtos
+    @PostMapping()
     @Transactional
-    public String insertProduto(@Valid Produto produto,
+    public String insert(@Valid Produto produto,
                                 BindingResult result,
                                 RedirectAttributes attributes) {
         if(result.hasErrors()){
@@ -50,52 +50,57 @@ public class ProdutoController {
         }
         repository.save(produto);
         attributes.addFlashAttribute("mensagem", "Produto salvo com sucesso");
-        //redireciona para localhost:8080/produtos/novo
-        return "redirect:/produtos/novo";
+        return "redirect:/produtos/form";
     }
 
-    //URL - localhost:8080/produtos/listar
-    @GetMapping("/listar")
+    // HTTP - GET -  http:localhost:8080/produtos
+    @GetMapping()
     @Transactional(readOnly = true)
-    public String listarProdutos(Model model){
+    public String findAll(Model model){
         model.addAttribute("produtos", repository.findAll());
-        return "/produto/listar-produtos"; //View
+        return "/produto/listar-produtos";
     }
 
-    @GetMapping("/editar/{id}")
-    public String editarProduto(@PathVariable ("id") Long id, Model model){
+    // HTTP - GET -  http:localhost:8080/produtos/1
+    @GetMapping("/{id}")
+    @Transactional(readOnly = true)
+    public String findById(@PathVariable ("id") Long id, Model model ){
+
         Produto produto = repository.findById(id).orElseThrow(
                 () -> new IllegalArgumentException("Produto inválido - id: " + id)
         );
+
         model.addAttribute("produto", produto);
         return "/produto/editar-produto";
     }
 
-    @PostMapping("/editar/{id}")
-    @Transactional(readOnly = true)
-    public String editarProduto(@PathVariable("id") Long id,
+    // HTTP - POST -  http:localhost:8080/produtos/1
+    @PutMapping("/{id}")
+    @Transactional
+    public String update(@PathVariable("id") Long id,
                                 @Valid Produto produto,
                                 BindingResult result){
         if(result.hasErrors()){
             produto.setId(id);
-            return "produto/editar-produto";
+            return "/produto/editar-produto";
         }
         repository.save(produto);
-        return "redirect:/produtos/listar";
+        return "redirect:/produtos";
     }
 
-    @GetMapping("/deletar/{id}")
+    @DeleteMapping("/{id}")
     @Transactional
-    public String deletarProduto(@PathVariable("id") Long id, Model model){
+    public String delete(@PathVariable("id") Long id, Model model){
         if(!repository.existsById(id)){
-            throw new IllegalArgumentException(("Produto inválido - id: " + id));
+            throw new IllegalArgumentException("Produto inválido - id: " + id);
         }
-        try{
+        try {
             repository.deleteById(id);
-        }catch(Exception e){
-            throw new IllegalArgumentException(("Produto inválido - id: " + id));
+        } catch (Exception e){
+            throw new IllegalArgumentException("Produto inválido - id: " + id);
         }
-        return "redirect:/produtos/listar";
+
+        return "redirect:/produtos";
     }
 }
 
